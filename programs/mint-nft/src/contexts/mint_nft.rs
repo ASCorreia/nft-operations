@@ -1,7 +1,13 @@
 use anchor_lang::{prelude::*, solana_program};
-use anchor_spl::{token::{TokenAccount, Mint, Token}, metadata::{MetadataAccount, MasterEditionAccount, Metadata}, associated_token::AssociatedToken};
-
-use mpl_token_metadata::{instructions::{MintCpi, MintCpiAccounts, MintInstructionArgs, CreateMetadataAccountV3Cpi, CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs, CreateMasterEditionV3Cpi, CreateMasterEditionV3InstructionArgs, CreateMasterEditionV3CpiAccounts}, types::{MintArgs, DataV2}};
+use anchor_spl::{
+    token::{TokenAccount, Mint, Token}, 
+    metadata::{MetadataAccount, MasterEditionAccount, Metadata}, 
+    associated_token::AssociatedToken
+};
+use mpl_token_metadata::{
+    instructions::{MintCpi, MintCpiAccounts, MintInstructionArgs, CreateMetadataAccountV3Cpi, CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs, CreateMasterEditionV3Cpi, CreateMasterEditionV3InstructionArgs, CreateMasterEditionV3CpiAccounts}, 
+    types::{MintArgs, DataV2}
+};
 pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
 
 #[derive(Accounts)]
@@ -57,7 +63,6 @@ impl<'info> MintNFT<'info> {
             &b"authority"[..], 
             &[bumps.mint_authority]
         ];
-
         let signer_seeds = &[&seeds[..]];
 
         let metadata_account = CreateMetadataAccountV3Cpi::new(
@@ -132,7 +137,6 @@ impl<'info> MintNFT<'info> {
                 }
             }
         );
-
         mint_cpi.invoke_signed(signer_seeds)?;
 
         Ok(())
