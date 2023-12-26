@@ -6,9 +6,10 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{
     instructions::{MintCpi, MintCpiAccounts, MintInstructionArgs, CreateMetadataAccountV3Cpi, CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs, CreateMasterEditionV3Cpi, CreateMasterEditionV3InstructionArgs, CreateMasterEditionV3CpiAccounts}, 
-    types::{MintArgs, DataV2}
+    types::{MintArgs, DataV2, Creator}
 };
 pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
+pub use solana_program::sysvar::rent::ID as RENT_ID;
 
 #[derive(Accounts)]
 pub struct MintNFT<'info> {
@@ -21,10 +22,12 @@ pub struct MintNFT<'info> {
         associated_token::authority = owner
     )]
     pub destination: Account<'info, TokenAccount>, // The account to which the NFT should be sent
+    /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub metadata: Account<'info, MetadataAccount>, // The metadata account that contains the NFT's metadata
+    pub metadata: UncheckedAccount<'info>, // The metadata account that contains the NFT's metadata
+    /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub master_edition: Account<'info, MasterEditionAccount>, // The master edition account that contains the NFT's master edition
+    pub master_edition: UncheckedAccount<'info>, // The master edition account that contains the NFT's master edition
     #[account(mut)]
     pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
     /// CHECK: This is not dangerous as it is only the mint authority that is being passed in
@@ -38,8 +41,11 @@ pub struct MintNFT<'info> {
     pub token_program: Program<'info, Token>, // The token program
     pub associated_token_program: Program<'info, AssociatedToken>, // The associated token program
     #[account(address = INSTRUCTIONS_ID)]
-    /// CHECK: no need to check it out
-    pub sysvar_instruction: AccountInfo<'info>, // The sysvar instruction account
+    /// CHECK: no need to check this
+    pub sysvar_instruction: UncheckedAccount<'info>, // The sysvar instruction account
+    #[account(address = RENT_ID)]
+    /// CHECK: no need to check this
+    pub rent: UncheckedAccount<'info>, // The sysvar instruction account
     pub token_metadata_program: Program<'info, Metadata>, // The token metadata program
 }
 
@@ -58,12 +64,21 @@ impl<'info> MintNFT<'info> {
         let spl_token_program = &self.token_program.to_account_info();
         let spl_ata_program = &self.associated_token_program.to_account_info();
         let spl_metadata_program = &self.token_metadata_program.to_account_info();
+        let rent = &self.rent.to_account_info();
 
         let seeds = &[
             &b"authority"[..], 
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
+
+        let creator = vec![
+            Creator {
+                address: self.mint_authority.key(),
+                verified: true,
+                share: 100,
+            },
+        ];
 
         let metadata_account = CreateMetadataAccountV3Cpi::new(
             spl_metadata_program,
@@ -72,17 +87,17 @@ impl<'info> MintNFT<'info> {
                 mint,
                 mint_authority: authority,
                 payer,
-                update_authority: (authority, false),
+                update_authority: (authority, true),
                 system_program,
-                rent: None,
+                rent: Some(rent),
             }, 
             CreateMetadataAccountV3InstructionArgs {
                 data: DataV2 {
-                    name: "Test".to_string(),
-                    symbol: "TST".to_string(),
-                    uri: "https://arweave.net/".to_string(),
+                    name: "Mint Test".to_string(),
+                    symbol: "YAY".to_string(),
+                    uri: "https://arweave.net/Pe4erqz3MZoywHqntUGZoKIoH0k9QUykVDFVMjpJ08s".to_string(),
                     seller_fee_basis_points: 0,
-                    creators: None,
+                    creators: Some(creator),
                     collection: None,
                     uses: None
                 },
@@ -91,25 +106,6 @@ impl<'info> MintNFT<'info> {
             }
         );
         metadata_account.invoke_signed(signer_seeds)?;
-
-        let master_edition_account = CreateMasterEditionV3Cpi::new(
-            spl_metadata_program,
-            CreateMasterEditionV3CpiAccounts {
-                edition: master_edition,
-                update_authority: authority,
-                mint_authority: authority,
-                mint,
-                payer,
-                metadata,
-                token_program: spl_token_program,
-                system_program,
-                rent: None,
-            },
-            CreateMasterEditionV3InstructionArgs {
-                max_supply: Some(1),
-            }
-        );
-        master_edition_account.invoke_signed(signer_seeds)?;
 
         let mint_cpi = MintCpi::new(
             spl_metadata_program,
@@ -138,6 +134,25 @@ impl<'info> MintNFT<'info> {
             }
         );
         mint_cpi.invoke_signed(signer_seeds)?;
+
+        let master_edition_account = CreateMasterEditionV3Cpi::new(
+            spl_metadata_program,
+            CreateMasterEditionV3CpiAccounts {
+                edition: master_edition,
+                update_authority: authority,
+                mint_authority: authority,
+                mint,
+                payer,
+                metadata,
+                token_program: spl_token_program,
+                system_program,
+                rent: Some(rent),
+            },
+            CreateMasterEditionV3InstructionArgs {
+                max_supply: Some(0),
+            }
+        );
+        master_edition_account.invoke_signed(signer_seeds)?;
 
         Ok(())
         

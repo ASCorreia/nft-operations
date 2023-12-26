@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("DxnbJwhqP2mZ7fwZipDjf4mwDETS13urV1D8dzVYWDbw");
+declare_id!("C3dsiPjuHb9YHPMe6RjJAFzXCFZtvLV3tFbUZycea1qz");
 
 pub mod contexts;
 
@@ -11,7 +11,7 @@ pub mod mint_nft {
 
     use super::*;
 
-    pub fn initialize(ctx: Context<MintNFT>) -> Result<()> {
+    pub fn mint_nft(ctx: Context<MintNFT>) -> Result<()> {
 
         ctx.accounts.mint_nft(&ctx.bumps)
     

@@ -5,13 +5,16 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-mint_nft = "DxnbJwhqP2mZ7fwZipDjf4mwDETS13urV1D8dzVYWDbw"
+mint_nft = "C3dsiPjuHb9YHPMe6RjJAFzXCFZtvLV3tFbUZycea1qz"
+
+[programs.devnet]
+mint_nft = "C3dsiPjuHb9YHPMe6RjJAFzXCFZtvLV3tFbUZycea1qz"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "/home/ascespool/.config/solana/id.json"
 
 [scripts]
