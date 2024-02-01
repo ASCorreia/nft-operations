@@ -4,13 +4,21 @@ import { MintNft } from "../target/types/mint_nft";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, createMint, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
-import { Keypair, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from "@solana/web3.js";
+import { ConfirmedSignatureInfo, Connection, Keypair, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from "@solana/web3.js";
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
+import {
+  deserializeMetadata,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { get } from "http";
+import { RpcAccount } from "@metaplex-foundation/umi";
+import axios from 'axios';
 
 describe("mint-nft", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
+
+  const connection = provider.connection;
 
   const wallet = provider.wallet as NodeWallet
 
@@ -80,7 +88,37 @@ describe("mint-nft", () => {
     )[0];
   };
 
- const jupiterProgramId = new PublicKey(
+  const url = "https://devnet.helius-rpc.com/?api-key=fccd1363-df30-4684-a9da-64298f1e14e6"
+
+  const getAssetsByGroup = async (collection: String) => {
+    const response = await axios.post(url, {
+      /*method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({*/
+        jsonrpc: '2.0',
+        id: 'my-id',
+        method: 'getAssetsByGroup',
+        params: {
+          groupKey: 'collection',
+          groupValue: collection,
+          page: 1, // Starts at 1
+          limit: 1000,
+        },
+      });
+    //});
+    const { result } = await response.data;
+    console.log("Assets by Group: ", result.items);
+
+    const owners = result.items.map(item => item.ownership.owner);
+
+    console.log("\n\nOwners: ", owners);
+
+    //Wrap around an ED21159 signature and verify with instruction introspection on the program side
+  };
+
+  const jupiterProgramId = new PublicKey(
     "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
   );
 
@@ -186,6 +224,8 @@ describe("mint-nft", () => {
       skipPreflight: true,
     });
     console.log("Collection Verified! Your transaction signature", tx);
+    let pubKey = new anchor.web3.PublicKey("J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w");
+    await getAssetsByGroup('6tRNRLb17wZX8xrTQUis9Ao2LijxxMd4rsMcQNo3pc8N'); // Get all assets in a collection
   })
 
   xit("Verify Collection 1", async() => {
