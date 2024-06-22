@@ -1,22 +1,18 @@
 use anchor_lang::prelude::*;
 
 use anchor_lang::solana_program;
-use anchor_spl::metadata::verify_sized_collection_item;
-use anchor_spl::metadata::VerifySizedCollectionItem;
+use anchor_spl::metadata::mpl_token_metadata::instructions::{
+    VerifyCollectionV1Cpi,
+    VerifyCollectionV1CpiAccounts,
+};
 use anchor_spl::metadata::{
+    verify_sized_collection_item,
+    VerifySizedCollectionItem,
     MetadataAccount,
-    VerifyCollection,
-    verify_collection,
 };
 use anchor_spl::{
     token::Mint, 
     metadata::Metadata, 
-};
-use mpl_token_metadata::instructions::VerifyCollectionCpi;
-use mpl_token_metadata::instructions::VerifyCollectionCpiAccounts;
-use mpl_token_metadata::instructions::{
-    VerifyCollectionV1Cpi, 
-    VerifyCollectionV1CpiAccounts,
 };
 pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
 pub use solana_program::sysvar::rent::ID as RENT_ID;
@@ -27,7 +23,7 @@ pub struct VerifyCollectionMint<'info> {
     pub payer: Signer<'info>, // The payer of the transaction
     /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub metadata: UncheckedAccount<'info>, // The metadata account that contains the NFT's metadata
+    pub metadata: Account<'info, MetadataAccount>, // The metadata account that contains the NFT's metadata
     #[account(mut)]
     pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
     /// CHECK: This is not dangerous as it is only the mint authority that is being passed in

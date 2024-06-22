@@ -6,16 +6,31 @@ use anchor_spl::{
         Token
     }, 
     metadata::{
-        verify_collection, MasterEditionAccount, Metadata, MetadataAccount, TokenRecordAccount
+        MasterEditionAccount, 
+        Metadata, 
+        MetadataAccount,
     }, 
     associated_token::AssociatedToken
 };
-use mpl_token_metadata::{
+use anchor_spl::metadata::mpl_token_metadata::{
     instructions::{
-        CreateMasterEditionV3Cpi, CreateMasterEditionV3CpiAccounts, CreateMasterEditionV3InstructionArgs, CreateMetadataAccountV3Cpi, CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs, MintCpi, MintCpiAccounts, MintInstructionArgs, VerifyCollectionV1Cpi, VerifyCollectionV1CpiAccounts
+        CreateMasterEditionV3Cpi, 
+        CreateMasterEditionV3CpiAccounts, 
+        CreateMasterEditionV3InstructionArgs, 
+        CreateMetadataAccountV3Cpi, 
+        CreateMetadataAccountV3CpiAccounts, 
+        CreateMetadataAccountV3InstructionArgs, 
+        MintCpi, 
+        MintCpiAccounts, 
+        MintInstructionArgs, 
+        VerifyCollectionV1Cpi, 
+        VerifyCollectionV1CpiAccounts
     }, 
     types::{
-        Collection, Creator, DataV2, MintArgs
+        Collection, 
+        Creator, 
+        DataV2, 
+        MintArgs
     }
 };
 pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
@@ -34,10 +49,10 @@ pub struct MintNFT<'info> {
     pub destination: Account<'info, TokenAccount>, // The account to which the NFT should be sent
     /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub metadata: UncheckedAccount<'info>, // The metadata account that contains the NFT's metadata
+    pub metadata: Account<'info, MetadataAccount>, // The metadata account that contains the NFT's metadata
     /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub master_edition: UncheckedAccount<'info>, // The master edition account that contains the NFT's master edition
+    pub master_edition: Account<'info, MasterEditionAccount>, // The master edition account that contains the NFT's master edition
     #[account(mut)]
     pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
     /// CHECK: This is not dangerous as it is only the mint authority that is being passed in

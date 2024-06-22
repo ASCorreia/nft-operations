@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken, metadata::Metadata, token::{
+    associated_token::AssociatedToken, metadata::{MasterEditionAccount, Metadata, MetadataAccount}, token::{
         mint_to, 
         Mint, 
         MintTo, 
@@ -8,7 +8,7 @@ use anchor_spl::{
         TokenAccount,
     }
 };
-use mpl_token_metadata::{
+use anchor_spl::metadata::mpl_token_metadata::{
     instructions::{
         CreateMasterEditionV3Cpi, 
         CreateMasterEditionV3CpiAccounts, 
@@ -18,7 +18,9 @@ use mpl_token_metadata::{
         CreateMetadataAccountV3InstructionArgs
     }, 
     types::{
-        CollectionDetails, Creator, DataV2
+        CollectionDetails, 
+        Creator, 
+        DataV2
     }
 };
 pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
@@ -42,10 +44,10 @@ pub struct CreateCollection<'info> {
     pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's Collection
     /// CHECK: This is safe and will be checked by metaplex program
     #[account(mut)]
-    metadata: UncheckedAccount<'info>,
+    metadata: Account<'info, MetadataAccount>,
     /// CHECK: This is safe and will be checked by metaplex program
     #[account(mut)]
-    master_edition: UncheckedAccount<'info>,
+    master_edition: Account<'info, MasterEditionAccount>,
     #[account(
         init_if_needed,
         payer = user,
