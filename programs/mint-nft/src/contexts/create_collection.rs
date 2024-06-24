@@ -89,6 +89,9 @@ impl<'info> CreateCollection<'info> {
                 share: 100,
             },
         ];
+
+        let rent = Rent::default();
+        let balance = rent.minimum_balance(0);
         
         let metadata_account = CreateMetadataAccountV3Cpi::new(
             spl_metadata_program, 

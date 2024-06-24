@@ -4,13 +4,8 @@ import { MintNft } from "../target/types/mint_nft";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, createMint, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
-import { ConfirmedSignatureInfo, Connection, Keypair, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from "@solana/web3.js";
+import { Keypair, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from "@solana/web3.js";
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
-import {
-  deserializeMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { get } from "http";
-import { RpcAccount } from "@metaplex-foundation/umi";
 import axios from 'axios';
 
 describe("mint-nft", () => {

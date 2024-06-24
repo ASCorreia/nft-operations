@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-use anchor_lang::solana_program;
 use anchor_spl::metadata::mpl_token_metadata::instructions::{
     VerifyCollectionV1Cpi,
     VerifyCollectionV1CpiAccounts,
@@ -14,8 +13,8 @@ use anchor_spl::{
     token::Mint, 
     metadata::Metadata, 
 };
-pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
-pub use solana_program::sysvar::rent::ID as RENT_ID;
+pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
+pub use anchor_lang::solana_program::sysvar::rent::ID as RENT_ID;
 
 #[derive(Accounts)]
 pub struct VerifyCollectionMint<'info> {

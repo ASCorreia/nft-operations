@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program};
+use anchor_lang::prelude::*;
 use anchor_spl::{
     token::{
         TokenAccount, 
@@ -33,8 +33,8 @@ use anchor_spl::metadata::mpl_token_metadata::{
         MintArgs
     }
 };
-pub use solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
-pub use solana_program::sysvar::rent::ID as RENT_ID;
+pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
+pub use anchor_lang::solana_program::sysvar::rent::ID as RENT_ID;
 
 #[derive(Accounts)]
 pub struct MintNFT<'info> {
