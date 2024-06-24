@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken, metadata::{MasterEditionAccount, Metadata, MetadataAccount}, token::{
+    associated_token::AssociatedToken, metadata::Metadata, 
+    token::{
         mint_to, 
         Mint, 
         MintTo, 
@@ -44,10 +45,10 @@ pub struct CreateCollection<'info> {
     pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's Collection
     /// CHECK: This is safe and will be checked by metaplex program
     #[account(mut)]
-    metadata: Account<'info, MetadataAccount>,
+    metadata: UncheckedAccount<'info>,
     /// CHECK: This is safe and will be checked by metaplex program
     #[account(mut)]
-    master_edition: Account<'info, MasterEditionAccount>,
+    master_edition: UncheckedAccount<'info>,
     #[account(
         init_if_needed,
         payer = user,
@@ -89,9 +90,6 @@ impl<'info> CreateCollection<'info> {
                 share: 100,
             },
         ];
-
-        let rent = Rent::default();
-        let balance = rent.minimum_balance(0);
         
         let metadata_account = CreateMetadataAccountV3Cpi::new(
             spl_metadata_program, 

@@ -5,11 +5,7 @@ use anchor_spl::{
         Mint, 
         Token
     }, 
-    metadata::{
-        MasterEditionAccount, 
-        Metadata, 
-        MetadataAccount,
-    }, 
+    metadata::Metadata, 
     associated_token::AssociatedToken
 };
 use anchor_spl::metadata::mpl_token_metadata::{
@@ -49,10 +45,10 @@ pub struct MintNFT<'info> {
     pub destination: Account<'info, TokenAccount>, // The account to which the NFT should be sent
     /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub metadata: Account<'info, MetadataAccount>, // The metadata account that contains the NFT's metadata
+    pub metadata: UncheckedAccount<'info>, // The metadata account that contains the NFT's metadata
     /// CHECK: no need to check this as the metaplex program will do it for us
     #[account(mut)]
-    pub master_edition: Account<'info, MasterEditionAccount>, // The master edition account that contains the NFT's master edition
+    pub master_edition: UncheckedAccount<'info>, // The master edition account that contains the NFT's master edition
     #[account(mut)]
     pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
     /// CHECK: This is not dangerous as it is only the mint authority that is being passed in
