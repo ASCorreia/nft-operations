@@ -26,7 +26,7 @@ pub struct CreateCollection<'info> {
         bump,
     )]
     /// CHECK: This account is not initialized and is being used for signing purposes only
-    pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's Collection
+    pub mint_authority: UncheckedAccount<'info>,
     #[account(mut)]
     /// CHECK: This account will be initialized by the metaplex program
     metadata: UncheckedAccount<'info>,
