@@ -5,8 +5,7 @@ use anchor_spl::metadata::mpl_token_metadata::instructions::{
     VerifyCollectionV1CpiAccounts,
 };
 use anchor_spl::metadata::{
-    verify_sized_collection_item,
-    VerifySizedCollectionItem,
+    MasterEditionAccount, 
     MetadataAccount,
 };
 use anchor_spl::{
@@ -14,36 +13,28 @@ use anchor_spl::{
     metadata::Metadata, 
 };
 pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
-pub use anchor_lang::solana_program::sysvar::rent::ID as RENT_ID;
 
 #[derive(Accounts)]
 pub struct VerifyCollectionMint<'info> {
+    pub authority: Signer<'info>,
     #[account(mut)]
-    pub payer: Signer<'info>, // The payer of the transaction
-    /// CHECK: no need to check this as the metaplex program will do it for us
-    #[account(mut)]
-    pub metadata: Account<'info, MetadataAccount>, // The metadata account that contains the NFT's metadata
-    #[account(mut)]
-    pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
-    /// CHECK: This is not dangerous as it is only the mint authority that is being passed in
+    pub metadata: Account<'info, MetadataAccount>,
+    pub mint: Account<'info, Mint>,
     #[account(
-        mut,
         seeds = [b"authority"],
         bump,
     )]
-    pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's mint
-    #[account(mut)]
+    /// CHECK: This account is not initialized and is being used for signing purposes only
+    pub mint_authority: UncheckedAccount<'info>,
     pub collection_mint: Account<'info, Mint>,
     #[account(mut)]
     pub collection_metadata: Account<'info, MetadataAccount>,
-    /// CHECK: no need to check this as the metaplex program will do it for us
-    #[account(mut)]
-    pub collection_master_edition: UncheckedAccount<'info>,
-    pub system_program: Program<'info, System>, // The system program
+    pub collection_master_edition: Account<'info, MasterEditionAccount>,
+    pub system_program: Program<'info, System>,
     #[account(address = INSTRUCTIONS_ID)]
-    /// CHECK: no need to check this
-    pub sysvar_instruction: UncheckedAccount<'info>, // The sysvar instruction account
-    pub token_metadata_program: Program<'info, Metadata>, // The token metadata program
+    /// CHECK: Sysvar instruction account that is being checked with an address constraint
+    pub sysvar_instruction: UncheckedAccount<'info>,
+    pub token_metadata_program: Program<'info, Metadata>,
 }
 
 impl<'info> VerifyCollectionMint<'info> {
@@ -63,8 +54,6 @@ impl<'info> VerifyCollectionMint<'info> {
         ];
         let signer_seeds = &[&seeds[..]];
 
-        msg!("Mint authority: {:?}", authority.key());
-
         let verify_collection = VerifyCollectionV1Cpi::new(
             spl_metadata_program,
         VerifyCollectionV1CpiAccounts {
@@ -80,28 +69,6 @@ impl<'info> VerifyCollectionMint<'info> {
         verify_collection.invoke_signed(signer_seeds)?;
 
         msg!("Collection Verified!");
-        
-        Ok(())
-    }
-
-    pub fn verify_collection1(&mut self, bumps: &VerifyCollectionMintBumps) -> Result<()> {
-        let seeds = &[
-            &b"authority"[..], 
-            &[bumps.mint_authority]
-        ];
-        let signer_seeds = &[&seeds[..]];
-
-        let cpi_program = self.token_metadata_program.to_account_info();
-        let cpi_accounts = VerifySizedCollectionItem {
-            payer: self.payer.to_account_info(),
-            metadata: self.metadata.to_account_info(),
-            collection_authority: self.mint_authority.to_account_info(),
-            collection_mint: self.collection_mint.to_account_info(),
-            collection_metadata: self.collection_metadata.to_account_info(),
-            collection_master_edition: self.collection_master_edition.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-        verify_sized_collection_item(cpi_ctx, None)?;
         
         Ok(())
     }

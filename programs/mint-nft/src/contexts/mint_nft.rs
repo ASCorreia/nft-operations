@@ -1,12 +1,14 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    token::{
-        TokenAccount, 
-        Mint, 
-        Token
-    }, 
+    associated_token::AssociatedToken, 
     metadata::Metadata, 
-    associated_token::AssociatedToken
+    token::{
+        mint_to,
+        Mint, 
+        MintTo, 
+        Token, 
+        TokenAccount
+    }
 };
 use anchor_spl::metadata::mpl_token_metadata::{
     instructions::{
@@ -15,85 +17,81 @@ use anchor_spl::metadata::mpl_token_metadata::{
         CreateMasterEditionV3InstructionArgs, 
         CreateMetadataAccountV3Cpi, 
         CreateMetadataAccountV3CpiAccounts, 
-        CreateMetadataAccountV3InstructionArgs, 
-        MintCpi, 
-        MintCpiAccounts, 
-        MintInstructionArgs, 
-        VerifyCollectionV1Cpi, 
-        VerifyCollectionV1CpiAccounts
+        CreateMetadataAccountV3InstructionArgs,
     }, 
     types::{
         Collection, 
         Creator, 
-        DataV2, 
-        MintArgs
+        DataV2,
     }
 };
-pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
-pub use anchor_lang::solana_program::sysvar::rent::ID as RENT_ID;
 
 #[derive(Accounts)]
 pub struct MintNFT<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>, // The owner of the account that should receive the NFT
+    pub owner: Signer<'info>,
     #[account(
-        init_if_needed,
+        init,
+        payer = owner,
+        mint::decimals = 0,
+        mint::authority = mint_authority,
+        mint::freeze_authority = mint_authority,
+    )]
+    pub mint: Account<'info, Mint>,
+    #[account(
+        init,
         payer = owner,
         associated_token::mint = mint,
         associated_token::authority = owner
     )]
-    pub destination: Account<'info, TokenAccount>, // The account to which the NFT should be sent
-    /// CHECK: no need to check this as the metaplex program will do it for us
+    pub destination: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub metadata: UncheckedAccount<'info>, // The metadata account that contains the NFT's metadata
-    /// CHECK: no need to check this as the metaplex program will do it for us
+    /// CHECK: This account will be initialized by the metaplex program
+    pub metadata: UncheckedAccount<'info>,
     #[account(mut)]
-    pub master_edition: UncheckedAccount<'info>, // The master edition account that contains the NFT's master edition
-    #[account(mut)]
-    pub mint: Account<'info, Mint>, // The mint account that contains the NFT's mint
-    /// CHECK: This is not dangerous as it is only the mint authority that is being passed in
+    /// CHECK: This account will be initialized by the metaplex program
+    pub master_edition: UncheckedAccount<'info>,
     #[account(
-        mut,
         seeds = [b"authority"],
         bump,
     )]
-    pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's mint
+    /// CHECK: This is account is not initialized and is being used for signing purposes only
+    pub mint_authority: UncheckedAccount<'info>,
     #[account(mut)]
     pub collection_mint: Account<'info, Mint>,
-    pub system_program: Program<'info, System>, // The system program
-    pub token_program: Program<'info, Token>, // The token program
-    pub associated_token_program: Program<'info, AssociatedToken>, // The associated token program
-    #[account(address = INSTRUCTIONS_ID)]
-    /// CHECK: no need to check this
-    pub sysvar_instruction: UncheckedAccount<'info>, // The sysvar instruction account
-    #[account(address = RENT_ID)]
-    /// CHECK: no need to check this
-    pub rent: UncheckedAccount<'info>, // The sysvar instruction account
-    pub token_metadata_program: Program<'info, Metadata>, // The token metadata program
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
 }
 
 impl<'info> MintNFT<'info> {
     pub fn mint_nft(&mut self, bumps: &MintNFTBumps) -> Result<()> {
 
-        let token = &self.destination.to_account_info();
-        let token_owner = &self.owner.to_account_info();
         let metadata = &self.metadata.to_account_info();
         let master_edition = &self.master_edition.to_account_info();
         let mint = &self.mint.to_account_info();
         let authority = &self.mint_authority.to_account_info();
         let payer = &self.owner.to_account_info();
         let system_program = &self.system_program.to_account_info();
-        let sysvar_instructions = &self.sysvar_instruction.to_account_info();
         let spl_token_program = &self.token_program.to_account_info();
-        let spl_ata_program = &self.associated_token_program.to_account_info();
         let spl_metadata_program = &self.token_metadata_program.to_account_info();
-        let rent = &self.rent.to_account_info();
 
         let seeds = &[
             &b"authority"[..], 
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
+
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_accounts = MintTo {
+            mint: self.mint.to_account_info(),
+            to: self.destination.to_account_info(),
+            authority: self.mint_authority.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+        mint_to(cpi_ctx, 1)?;
+        msg!("Collection NFT minted!");
 
         let creator = vec![
             Creator {
@@ -112,13 +110,13 @@ impl<'info> MintNFT<'info> {
                 payer,
                 update_authority: (authority, true),
                 system_program,
-                rent: Some(rent),
+                rent: None,
             }, 
             CreateMetadataAccountV3InstructionArgs {
                 data: DataV2 {
                     name: "Mint Test".to_string(),
                     symbol: "YAY".to_string(),
-                    uri: "https://arweave.net/Pe4erqz3MZoywHqntUGZoKIoH0k9QUykVDFVMjpJ08s".to_string(),
+                    uri: "".to_string(),
                     seller_fee_basis_points: 0,
                     creators: Some(creator),
                     collection: Some(Collection {
@@ -133,34 +131,6 @@ impl<'info> MintNFT<'info> {
         );
         metadata_account.invoke_signed(signer_seeds)?;
 
-        let mint_cpi = MintCpi::new(
-            spl_metadata_program,
-            MintCpiAccounts{
-                token,
-                token_owner: Some(token_owner),
-                metadata,
-                master_edition: Some(master_edition),
-                token_record: None,
-                mint,
-                authority,
-                delegate_record: None,
-                payer,
-                system_program,
-                sysvar_instructions,
-                spl_token_program,
-                spl_ata_program,
-                authorization_rules: None,
-                authorization_rules_program: None,
-            },
-            MintInstructionArgs {
-                mint_args: MintArgs::V1 {
-                    amount: 1,
-                    authorization_data: None,
-                }
-            }
-        );
-        mint_cpi.invoke_signed(signer_seeds)?;
-
         let master_edition_account = CreateMasterEditionV3Cpi::new(
             spl_metadata_program,
             CreateMasterEditionV3CpiAccounts {
@@ -172,7 +142,7 @@ impl<'info> MintNFT<'info> {
                 metadata,
                 token_program: spl_token_program,
                 system_program,
-                rent: Some(rent),
+                rent: None,
             },
             CreateMasterEditionV3InstructionArgs {
                 max_supply: Some(0),
@@ -180,40 +150,7 @@ impl<'info> MintNFT<'info> {
         );
         master_edition_account.invoke_signed(signer_seeds)?;
 
-        //Test minting and transferinf pNFTs
-
         Ok(())
         
-    }
-
-    pub fn verify_collection(&mut self, bumps: &MintNFTBumps) -> Result<()> {
-        let metadata = &self.metadata.to_account_info();
-        let authority = &self.mint_authority.to_account_info();
-        let collection_mint = &self.collection_mint.to_account_info();
-        let system_program = &self.system_program.to_account_info();
-        let sysvar_instructions = &self.sysvar_instruction.to_account_info();
-        let spl_metadata_program = &self.token_metadata_program.to_account_info();
-
-        let seeds = &[
-            &b"authority"[..], 
-            &[bumps.mint_authority]
-        ];
-        let signer_seeds = &[&seeds[..]];
-
-        let verify_collection = VerifyCollectionV1Cpi::new(
-            spl_metadata_program,
-        VerifyCollectionV1CpiAccounts {
-            authority,
-            delegate_record: None,
-            metadata,
-            collection_mint,
-            collection_metadata: None,
-            collection_master_edition: None,
-            system_program,
-            sysvar_instructions,
-        });
-        verify_collection.invoke_signed(signer_seeds)?;
-        
-        Ok(())
     }
 }

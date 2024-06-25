@@ -19,8 +19,11 @@ describe("mint-nft", () => {
 
   const mintAuthority = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("authority")], program.programId)[0];
 
-  let collectionMint: PublicKey;
-  let mint: PublicKey;
+  const collectionKeypair = Keypair.generate();
+  const collectionMint = collectionKeypair.publicKey;
+
+  const mintKeypair = Keypair.generate();
+  const mint = mintKeypair.publicKey;
 
   const getMetadata = async (mint: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
     return (
@@ -50,9 +53,7 @@ describe("mint-nft", () => {
   };
 
   it("Create Collection NFT", async() => {
-    const mintKeypair = Keypair.generate();
-    collectionMint = await createMint(provider.connection, wallet.payer, mintAuthority, mintAuthority, 0);
-    console.log("Collection Mint Key: ", collectionMint.toBase58());
+    console.log("\nCollection Mint Key: ", collectionMint.toBase58());
 
     const metadata = await getMetadata(collectionMint);
     console.log("Collection Metadata Account: ", metadata.toBase58());
@@ -74,18 +75,16 @@ describe("mint-nft", () => {
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-      sysvarInstruction: SYSVAR_INSTRUCTIONS_PUBKEY,
     })
+    .signers([collectionKeypair])
     .rpc({
       skipPreflight: true,
     });
-    console.log("Collection NFT minted: TxID - ", tx);
+    console.log("\nCollection NFT minted: TxID - ", tx);
   })
 
   it("Mint NFT", async () => {
-    // Add your test here.
-    mint = await createMint(provider.connection, wallet.payer, mintAuthority, mintAuthority, 0);
-    console.log("Mint", mint.toBase58());
+    console.log("\nMint", mint.toBase58());
 
     const metadata = await getMetadata(mint);
     console.log("Metadata", metadata.toBase58());
@@ -108,19 +107,18 @@ describe("mint-nft", () => {
       systemProgram: SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
-      sysvarInstruction: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
-      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
     })
+    .signers([mintKeypair])
     .rpc({
       skipPreflight: true,
     });
-    console.log("\n\nNFT Minted! Your transaction signature", tx);
+    console.log("\nNFT Minted! Your transaction signature", tx);
   });
 
   it("Verify Collection", async() => {
     const mintMetadata = await getMetadata(mint);
-    console.log("Mint Metadata", mintMetadata.toBase58());
+    console.log("\nMint Metadata", mintMetadata.toBase58());
 
     const collectionMetadata = await getMetadata(collectionMint);
     console.log("Collection Metadata", collectionMetadata.toBase58());
@@ -129,7 +127,7 @@ describe("mint-nft", () => {
     console.log("Collection Master Edition", collectionMasterEdition.toBase58());
 
     const tx = await program.methods.verifyCollection().accountsPartial({
-      payer: wallet.publicKey,
+      authority: wallet.publicKey,
       metadata: mintMetadata,
       mint,
       mintAuthority,
@@ -143,35 +141,7 @@ describe("mint-nft", () => {
     .rpc({
       skipPreflight: true,
     });
-    console.log("Collection Verified! Your transaction signature", tx);
-  })
-
-  xit("Verify Collection 1", async() => {
-    const mintMetadata = await getMetadata(mint);
-    console.log("Mint Metadata", mintMetadata.toBase58());
-
-    const collectionMetadata = await getMetadata(collectionMint);
-    console.log("Collection Metadata", collectionMetadata.toBase58());
-
-    const collectionMasterEdition = await getMasterEdition(collectionMint);
-    console.log("Collection Master Edition", collectionMasterEdition.toBase58());
-
-    const tx = await program.methods.verifyCollection1().accountsPartial({
-      payer: wallet.publicKey,
-      metadata: mintMetadata,
-      mint,
-      mintAuthority,
-      collectionMint,
-      collectionMetadata,
-      collectionMasterEdition,
-      systemProgram: SystemProgram.programId,
-      sysvarInstruction: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
-      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-    })
-    .rpc({
-      skipPreflight: true,
-    });
-    console.log("Collection Verified! Your transaction signature", tx);
+    console.log("\nCollection Verified! Your transaction signature", tx);
   })
 });
 

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Foe8RMYw3sAshTdTmG87rzbY7jsZdaWC9YmYF9k6ceXx");
+declare_id!("3EMcczaGi9ivdLxvvFwRbGYeEUEHpGwabXegARw4jLxa");
 
 pub mod contexts;
 
@@ -20,9 +20,5 @@ pub mod mint_nft {
 
     pub fn verify_collection(ctx: Context<VerifyCollectionMint>) -> Result<()> {
         ctx.accounts.verify_collection(&ctx.bumps)
-    }
-
-    pub fn verify_collection1(ctx: Context<VerifyCollectionMint>) -> Result<()> {
-        ctx.accounts.verify_collection1(&ctx.bumps)
     }
 }

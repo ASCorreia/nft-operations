@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken, metadata::Metadata, 
+    associated_token::AssociatedToken, 
+    metadata::Metadata, 
     token::{
         mint_to, 
         Mint, 
@@ -24,33 +25,33 @@ use anchor_spl::metadata::mpl_token_metadata::{
         DataV2
     }
 };
-pub use anchor_lang::solana_program::sysvar::instructions::ID as INSTRUCTIONS_ID;
 
 #[derive(Accounts)]
 pub struct CreateCollection<'info> {
     #[account(mut)]
     user: Signer<'info>,
     #[account(
-        mut,
+        init,
+        payer = user,
         mint::decimals = 0,
-        mint:: authority = mint_authority,
+        mint::authority = mint_authority,
+        mint::freeze_authority = mint_authority,
     )]
     mint: Account<'info, Mint>,
-    /// CHECK: This is not dangerous as it is only the mint authority that is being passed in
     #[account(
-        mut,
         seeds = [b"authority"],
         bump,
     )]
-    pub mint_authority: UncheckedAccount<'info>, // The mint authority of the NFT's Collection
-    /// CHECK: This is safe and will be checked by metaplex program
+    /// CHECK: This account is not initialized and is being used for signing purposes only
+    pub mint_authority: UncheckedAccount<'info>,
     #[account(mut)]
+    /// CHECK: This account will be initialized by the metaplex program
     metadata: UncheckedAccount<'info>,
-    /// CHECK: This is safe and will be checked by metaplex program
     #[account(mut)]
+    /// CHECK: This account will be initialized by the metaplex program
     master_edition: UncheckedAccount<'info>,
     #[account(
-        init_if_needed,
+        init,
         payer = user,
         associated_token::mint = mint,
         associated_token::authority = user
@@ -60,9 +61,6 @@ pub struct CreateCollection<'info> {
     token_program: Program<'info, Token>,
     associated_token_program: Program<'info, AssociatedToken>,
     token_metadata_program: Program<'info, Metadata>,
-    #[account(address = INSTRUCTIONS_ID)]
-    /// CHECK: no need to check this
-    pub sysvar_instruction: UncheckedAccount<'info>, // The sysvar instruction account
 }
 
 impl<'info> CreateCollection<'info> {
@@ -82,6 +80,16 @@ impl<'info> CreateCollection<'info> {
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
+
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_accounts = MintTo {
+            mint: self.mint.to_account_info(),
+            to: self.destination.to_account_info(),
+            authority: self.mint_authority.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+        mint_to(cpi_ctx, 1)?;
+        msg!("Collection NFT minted!");
 
         let creator = vec![
             Creator {
@@ -122,16 +130,6 @@ impl<'info> CreateCollection<'info> {
         );
         metadata_account.invoke_signed(signer_seeds)?;
         msg!("Metadata Account created!");
-
-        let cpi_program = self.token_program.to_account_info();
-        let cpi_accounts = MintTo {
-            mint: self.mint.to_account_info(),
-            to: self.destination.to_account_info(),
-            authority: self.mint_authority.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-        mint_to(cpi_ctx, 1)?;
-        msg!("Collection NFT minted!");
 
         let master_edition_account = CreateMasterEditionV3Cpi::new(
             spl_metadata_program,
