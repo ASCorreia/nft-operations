@@ -47,7 +47,7 @@ pub struct CreateCollection<'info> {
 }
 ```
 
-### Let's brake down these accounts:
+### Let's break down these accounts:
 
 - user: the account that is creating the collection NFT and the owner of the destination token account
 
@@ -67,7 +67,7 @@ pub struct CreateCollection<'info> {
 
 - token_metadata_program: MPL token metadata program that will be used to create the metadata and master edition accounts
 
-To note in here, that both the metadata account and the master_edition account are Uncheck Accounts. That is due to the fact that they are not initialized, and the initialization will be performed by the token_metadata_program when we perform a CPI (cross progrom invocation) to initialize both accounts.
+To note in here, that both the metadata account and the master_edition account are Unchecked Accounts. That is due to the fact that they are not initialized, and the initialization will be performed by the token_metadata_program when we perform a CPI (cross program invocation) to initialize both accounts.
 
 If we had something like:
 
@@ -239,7 +239,7 @@ pub struct MintNFT<'info> {
 }
 ```
 
-### Let's brake down these accounts:
+### Let's break down these accounts:
 
 - owner: the account that is creating the NFT and the owner of the destination token account
 
@@ -450,9 +450,9 @@ pub struct VerifyCollectionMint<'info> {
 }
 ```
 
-### Let's brake down these accounts:
+### Let's break down these accounts:
 
-- authority: signer of the transaction. This can be used to restrict the address that can execute the verify collection method, by adding contraints
+- authority: signer of the transaction. This can be used to restrict the address that can execute the verify collection method, by adding constraints
 
 - metadata: the metadata account of the NFT that we want to verify
 
@@ -474,7 +474,7 @@ for the currently-running transaction
 - token_metadata_program: MPL token metadata program that will be used to verify the NFT as part of the desired collection
 
 Note that the only account that need to be mutable in here, are the NFT and Colelction NFT metadata accounts.
-This is due to the fact that both will be updated. The NFT metadata account will have the "verified" bollean set to true, and the Collection NFT metadata account will have the colelction size incremented
+This is due to the fact that both will be updated. The NFT metadata account will have the "verified" boolean set to true, and the Collection NFT metadata account will have the colelction size incremented
 
 ### We then implement some functionality for our VerifyCollectionMint context:
 
