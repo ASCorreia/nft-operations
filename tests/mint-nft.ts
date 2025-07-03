@@ -64,7 +64,7 @@ describe("mint-nft", () => {
     const destination = getAssociatedTokenAddressSync(collectionMint, wallet.publicKey);
     console.log("Destination ATA = ", destination.toBase58());
 
-    const tx = await program.methods.createCollection().accountsPartial({
+    const tx = await program.methods.createCollection().accounts({
       user: wallet.publicKey,
       mint: collectionMint,
       mintAuthority,
